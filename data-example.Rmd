@@ -1,0 +1,63 @@
+---
+title: "Untitled"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE)
+```
+
+```{r load_dat}
+# amp_1 <- read.csv("/Users/awhudson/Dropbox/MethodsWork-Faculty/BoundaryNull/Data/amp-1.csv")
+set.seed(206)
+require(speff2trial)
+source("~/Dropbox/MethodsWork-Faculty/BoundaryNull/Code/nplrt-vimp-rev.R")
+data(ACTG175)
+dat.actg <- subset(ACTG175, cd40 > 0)
+# data.actg <- subset(ACTG175, )
+```
+
+```{r data}
+Y <- log10(dat.actg$cd420)
+X <- with(dat.actg, 
+          cbind(age, wtkg, gender, hemo, treat, log10(cd40))) 
+continuous <- c(TRUE, TRUE, FALSE, FALSE, FALSE, TRUE)
+```
+
+```{r vimp}
+estimate <- numeric(6)
+ci.lower <- numeric(6)
+ci.upper <- numeric(6)
+p.val <- numeric(6)
+vimp.out.list <- list()
+for(i in 1:ncol(X)) {
+  load(paste0("/Users/awhudson/Dropbox/MethodsWork-Faculty/BoundaryNull/Code/Data-Results/nplrt-data-results-12-19-24", i, ".rda"))
+  vimp.out.list[[i]] <- vimp.out
+  estimate[i] <- vimp.out$estimate
+  ci.lower[i] <- vimp.out$ci.lower
+  ci.upper[i] <- vimp.out$ci.upper
+  p.val[i] <- vimp.out$p.val
+}
+
+par(oma = c(1, 4, 1, 1))
+y.labs = c("Age", "Weight", "Gender", "Hemophilia", "TX", "Baseline CD4")
+plot(y = 1:7, x = rep(0, 7), yaxt = "n", xlab = "Improvement in Fit",
+     ylab = " ", type = "n", xlim = c(0,.02), xaxt = "n")
+axis(side = 2, at = 1:6, y.labs, las = 2)
+axis(side = 1, at = c(0, .005, .010, .015), c(0, .005, .010, .015))
+for(i in 1:6) {
+  segments(y0 = i, y1 = i, x0 = ci.lower[i], x1 = ci.upper[i])
+  segments(y0 = i - .15, y1 = i + .15, x0 = ci.lower[i], x1 = ci.lower[i])
+  segments(y0 = i - .15, y1 = i + .15, x0 = ci.upper[i], x1 = ci.upper[i])
+}
+points(y = 1:6, x = estimate, bg = "salmon", pch = 21)
+abline(v = .016, col = "grey", lwd = 2, lty = 2)
+text(x = .0185, y = 7, "p-value")
+segments(x0 = .016, x1 = .025, y0 = 6.5, y1 = 6.5, col = "grey")
+
+text(y = 1:6, x = .0185, labels = p.val)
+
+```
+
